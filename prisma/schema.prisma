@@ -1,0 +1,95 @@
+// Modelo de dados do calendário de alocação de professores.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Modalidade {
+  TECNICO
+  APRENDIZAGEM
+  APERFEICOAMENTO
+}
+
+model Professor {
+  id         Int             @id @default(autoincrement())
+  nome       String
+  email      String?         @unique
+  cor        String          @default("#0f6cbd") // cor dos blocos no calendário
+  ativo      Boolean         @default(true)
+  series     SerieAlocacao[]
+  alocacoes  Alocacao[]
+  criadoEm   DateTime        @default(now())
+}
+
+model Curso {
+  id         Int        @id @default(autoincrement())
+  nome       String
+  modalidade Modalidade
+  ucs        UC[]
+  turmas     Turma[]
+}
+
+/// Unidade Curricular (equivale à disciplina). É a unidade de alocação.
+model UC {
+  id           Int             @id @default(autoincrement())
+  nome         String
+  cargaHoraria Int?            // em horas
+  cursoId      Int
+  curso        Curso           @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  series       SerieAlocacao[]
+  alocacoes    Alocacao[]
+}
+
+/// Grupo de alunos de um curso. Não há semestre fixo: cada turma começa em uma data própria.
+model Turma {
+  id         Int             @id @default(autoincrement())
+  codigo     String
+  cursoId    Int
+  curso      Curso           @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  series     SerieAlocacao[]
+  alocacoes  Alocacao[]
+}
+
+/// Alocação em lote: uma UC para um professor, em dias da semana fixos, entre duas datas.
+/// Ao salvar, o sistema gera uma Alocacao para cada data do período.
+model SerieAlocacao {
+  id          Int        @id @default(autoincrement())
+  professorId Int
+  professor   Professor  @relation(fields: [professorId], references: [id])
+  ucId        Int
+  uc          UC         @relation(fields: [ucId], references: [id])
+  turmaId     Int
+  turma       Turma      @relation(fields: [turmaId], references: [id])
+  dataInicio  String     // "AAAA-MM-DD" (data da UC)
+  dataFim     String     // "AAAA-MM-DD"
+  diasSemana  String     // dias separados por vírgula, 0 = domingo ... 6 = sábado. Ex.: "2,4"
+  horaInicio  String     // "HH:MM"
+  horaFim     String     // "HH:MM"
+  alocacoes   Alocacao[]
+  criadoEm    DateTime   @default(now())
+}
+
+/// Uma ocorrência no calendário (um bloco). Pode ser avulsa ou fazer parte de uma série.
+model Alocacao {
+  id          Int            @id @default(autoincrement())
+  professorId Int
+  professor   Professor      @relation(fields: [professorId], references: [id])
+  ucId        Int
+  uc          UC             @relation(fields: [ucId], references: [id])
+  turmaId     Int
+  turma       Turma          @relation(fields: [turmaId], references: [id])
+  inicio      DateTime
+  fim         DateTime
+  serieId     Int?
+  serie       SerieAlocacao? @relation(fields: [serieId], references: [id], onDelete: Cascade)
+  criadoEm    DateTime       @default(now())
+
+  @@index([inicio])
+  @@index([professorId, inicio])
+}
