@@ -6,6 +6,8 @@ Stack: Next.js 16, React 19, TypeScript, Tailwind 4, FullCalendar 7 e Prisma 7 (
 
 ## Como rodar
 
+Requer **Node.js 22 ou mais novo** (o Prisma e o SQLite não funcionam no Node 20). Com o nvm: `nvm install 22` e `nvm use 22`.
+
 ```bash
 npm install                      # instala as dependências e gera o cliente do Prisma
 copy .env.example .env           # no Windows (no Linux/macOS: cp .env.example .env)
