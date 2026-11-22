@@ -2,6 +2,7 @@
 import "dotenv/config";
 import { prisma } from "../lib/prisma";
 import { gerarOcorrencias, type DadosSerie } from "../lib/recorrencia";
+import { gerarHashSenha } from "../lib/senha";
 
 function hoje() {
   return new Date().toISOString().slice(0, 10);
@@ -13,6 +14,7 @@ function somarDias(data: string, dias: number) {
 }
 
 async function main() {
+  await prisma.usuario.deleteMany();
   await prisma.alocacao.deleteMany();
   await prisma.serieAlocacao.deleteMany();
   await prisma.turma.deleteMany();
@@ -75,6 +77,25 @@ async function main() {
       },
     });
   }
+
+  // Usuários de exemplo, só para desenvolvimento.
+  await prisma.usuario.create({
+    data: {
+      nome: "Administrador",
+      email: "admin@exemplo.com",
+      senhaHash: await gerarHashSenha("admin12345"),
+      papel: "ADMIN",
+    },
+  });
+  await prisma.usuario.create({
+    data: {
+      nome: ana.nome,
+      email: "ana@exemplo.com",
+      senhaHash: await gerarHashSenha("professor123"),
+      papel: "PROFESSOR",
+      professorId: ana.id,
+    },
+  });
 
   console.log(`Seed concluído: ${await prisma.alocacao.count()} alocações criadas.`);
 }

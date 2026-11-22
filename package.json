@@ -12,15 +12,19 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "usuario:criar": "tsx scripts/criar-usuario.ts"
   },
   "dependencies": {
     "@fullcalendar/react": "7.1.4",
     "@prisma/adapter-better-sqlite3": "7.10.1",
     "@prisma/client": "7.10.1",
+    "bcryptjs": "3.0.3",
+    "iron-session": "9.1.0",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "server-only": "0.0.1",
     "temporal-polyfill": "1.0.8"
   },
   "devDependencies": {

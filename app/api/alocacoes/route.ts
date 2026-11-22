@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { buscarUsuarioAtual } from "@/lib/auth";
 
 // GET /api/alocacoes?inicio=ISO&fim=ISO&professores=1,2
 // Devolve as alocações no formato de eventos do FullCalendar.
 export async function GET(request: Request) {
+  // Admin e Professor podem ver todas as alocações.
+  if (!(await buscarUsuarioAtual())) {
+    return Response.json({ erro: "Faça login para continuar." }, { status: 401 });
+  }
   const params = new URL(request.url).searchParams;
   const inicio = new Date(params.get("inicio") ?? "");
   const fim = new Date(params.get("fim") ?? "");

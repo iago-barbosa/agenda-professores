@@ -16,7 +16,25 @@ npm run db:seed                  # opcional: dados de exemplo
 npm run dev
 ```
 
-Abra http://localhost:3000.
+Abra http://localhost:3000. No `.env`, troque o `SESSION_PASSWORD` por uma chave aleatória (o comando para gerar está no `.env.example`).
+
+## Login e perfis
+
+| Perfil | Pode |
+| --- | --- |
+| Admin | Ver e editar tudo |
+| Professor | Só visualizar (a própria agenda e a dos outros professores) |
+
+O seed cria dois usuários de exemplo, só para desenvolvimento: `admin@exemplo.com` / `admin12345` (Admin) e `ana@exemplo.com` / `professor123` (Professor).
+
+Para criar ou atualizar um usuário:
+
+```bash
+npm run usuario:criar -- --nome "Fulano" --email fulano@escola.com --senha "senhaForte123" --papel ADMIN
+npm run usuario:criar -- --nome "Ana" --email ana@escola.com --senha "senhaForte123" --papel PROFESSOR --professor 1
+```
+
+`--professor` é o id do cadastro do professor (opcional).
 
 ## Estrutura
 
@@ -28,6 +46,11 @@ Abra http://localhost:3000.
 | `lib/prisma.ts` | Conexão com o banco |
 | `app/api/alocacoes/route.ts` | `GET /api/alocacoes?inicio=&fim=&professores=1,2` |
 | `app/ui/calendario.tsx` | Calendário semanal com filtros por professor e período |
+| `app/login/` | Tela de login e ações de entrar e sair |
+| `lib/auth.ts` | Usuário logado e checagem de perfil (`exigirUsuario`, `exigirAdmin`) |
+| `lib/sessao.ts` | Cookie de sessão criptografado (iron-session) |
+| `proxy.ts` | Redireciona para o login quem não tem sessão |
+| `scripts/criar-usuario.ts` | Cria ou atualiza usuários pelo terminal |
 
 ## Fuso horário
 
