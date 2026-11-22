@@ -16,6 +16,24 @@ enum Modalidade {
   APERFEICOAMENTO
 }
 
+enum Papel {
+  ADMIN // cadastra e edita tudo
+  PROFESSOR // só visualiza
+}
+
+/// Quem entra no sistema. Um usuário com papel PROFESSOR pode estar ligado ao seu cadastro de professor.
+model Usuario {
+  id          Int        @id @default(autoincrement())
+  nome        String
+  email       String     @unique
+  senhaHash   String
+  papel       Papel      @default(PROFESSOR)
+  ativo       Boolean    @default(true)
+  professorId Int?       @unique
+  professor   Professor? @relation(fields: [professorId], references: [id], onDelete: SetNull)
+  criadoEm    DateTime   @default(now())
+}
+
 model Professor {
   id         Int             @id @default(autoincrement())
   nome       String
@@ -24,6 +42,7 @@ model Professor {
   ativo      Boolean         @default(true)
   series     SerieAlocacao[]
   alocacoes  Alocacao[]
+  usuario    Usuario?
   criadoEm   DateTime        @default(now())
 }
 
