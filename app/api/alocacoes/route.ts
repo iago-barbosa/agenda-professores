@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       fim: { gt: inicio },
       ...(professores.length ? { professorId: { in: professores } } : {}),
     },
-    include: { professor: true, uc: true, turma: true },
+    include: { professor: true, uc: { include: { curso: true } }, turma: true },
     orderBy: { inicio: "asc" },
   });
 
@@ -38,7 +38,13 @@ export async function GET(request: Request) {
       color: a.professor.cor,
       extendedProps: {
         professor: a.professor.nome,
+        professorId: a.professorId,
+        uc: a.uc.nome,
+        ucId: a.ucId,
+        curso: a.uc.curso.nome,
+        cursoId: a.uc.cursoId,
         turma: a.turma.codigo,
+        turmaId: a.turmaId,
         serieId: a.serieId,
       },
     })),

@@ -1,22 +1,37 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import FullCalendar from "@fullcalendar/react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import FullCalendar, { type CalendarRef } from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
+import interactionPlugin from "@fullcalendar/react/interaction";
 import formaTheme from "@fullcalendar/react/themes/forma";
 import ptBr from "@fullcalendar/react/locales/pt-br";
 import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/forma/theme.css";
 import "@fullcalendar/react/themes/forma/palettes/blue.css";
+import type { Catalogo } from "@/lib/catalogo";
+import DialogoAlocacao, { type DadosAlocacao } from "@/app/ui/dialogo-alocacao";
 
 function formatarData(data: string) {
   const [ano, mes, dia] = data.split("-");
   return `${dia}/${mes}/${ano}`;
 }
 
-type Professor = { id: number; nome: string; cor: string };
+/** "2026-11-16T08:00:00-03:00" -> data e hora locais (o calendário já está no fuso de Brasília). */
+function separar(iso: string) {
+  return { data: iso.slice(0, 10), hora: iso.slice(11, 16) };
+}
 
-export default function Calendario({ professores }: { professores: Professor[] }) {
+export default function Calendario({
+  catalogo,
+  podeEditar,
+}: {
+  catalogo: Catalogo;
+  podeEditar: boolean;
+}) {
+  const professores = catalogo.professores;
+  const calendario = useRef<CalendarRef>(null);
+  const [dialogo, setDialogo] = useState<DadosAlocacao | null>(null);
   const [selecionados, setSelecionados] = useState<number[]>([]);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
@@ -141,7 +156,23 @@ export default function Calendario({ professores }: { professores: Professor[] }
           <FullCalendar
             // Recria o calendário ao trocar entre semana e período.
             key={modoPeriodo ? `periodo-${dataInicio}-${dataFim}` : "semana"}
-            plugins={[timeGridPlugin, formaTheme]}
+            ref={calendario}
+          plugins={[timeGridPlugin, interactionPlugin, formaTheme]}
+          selectable={podeEditar}
+          selectMirror
+          select={(info) => {
+            const inicio = separar(info.startStr);
+            const fim = separar(info.endStr);
+            setDialogo({ data: inicio.data, horaInicio: inicio.hora, horaFim: fim.hora });
+            calendario.current?.getApi().unselect();
+          }}
+          eventClick={(info) => {
+            const ev = info.event;
+            const p = ev.extendedProps as Omit<DadosAlocacao, "data" | "horaInicio" | "horaFim">;
+            const inicio = separar(ev.startStr);
+            const fim = separar(ev.endStr);
+            setDialogo({ ...p, id: Number(ev.id), data: inicio.data, horaInicio: inicio.hora, horaFim: fim.hora });
+          }}
             locale={ptBr}
             timeZone="America/Sao_Paulo"
             views={{
@@ -178,6 +209,17 @@ export default function Calendario({ professores }: { professores: Professor[] }
           />
         </div>
       </div>
+
+      {dialogo && (
+        <DialogoAlocacao
+          key={`${dialogo.id ?? "nova"}-${dialogo.data}-${dialogo.horaInicio}`}
+          dados={dialogo}
+          catalogo={catalogo}
+          podeEditar={podeEditar}
+          aoFechar={() => setDialogo(null)}
+          aoAlterar={() => calendario.current?.getApi().refetchEvents()}
+        />
+      )}
     </div>
   );
 }
