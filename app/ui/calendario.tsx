@@ -17,6 +17,30 @@ function formatarData(data: string) {
   return `${dia}/${mes}/${ano}`;
 }
 
+const DIAS_SEMANA = [
+  "domingo",
+  "segunda",
+  "terça",
+  "quarta",
+  "quinta",
+  "sexta",
+  "sábado",
+];
+
+type Balao = {
+  x: number;
+  y: number;
+  lado: "direita" | "esquerda";
+  cor: string;
+  uc: string;
+  curso: string;
+  professor: string;
+  turma: string;
+  data: string;
+  horario: string;
+  lote: boolean;
+};
+
 /** "2026-11-16T08:00:00-03:00" -> data e hora locais (o calendário já está no fuso de Brasília). */
 function separar(iso: string) {
   return { data: iso.slice(0, 10), hora: iso.slice(11, 16) };
@@ -32,6 +56,7 @@ export default function Calendario({
   const professores = catalogo.professores;
   const calendario = useRef<CalendarRef>(null);
   const [dialogo, setDialogo] = useState<DadosAlocacao | null>(null);
+  const [balao, setBalao] = useState<Balao | null>(null);
   const [selecionados, setSelecionados] = useState<number[]>([]);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
@@ -183,7 +208,33 @@ export default function Calendario({
               });
               calendario.current?.getApi().unselect();
             }}
+            eventMouseEnter={(info) => {
+              const ev = info.event;
+              const p = ev.extendedProps;
+              const caixa = info.el.getBoundingClientRect();
+              const inicio = separar(ev.startStr);
+              const fim = separar(ev.endStr);
+              const [a, m, d] = inicio.data.split("-").map(Number);
+              const diaSemana = DIAS_SEMANA[new Date(a, m - 1, d).getDay()];
+              // Abre à direita do bloco; se não couber na tela, abre à esquerda.
+              const cabeADireita = caixa.right + 300 < window.innerWidth;
+              setBalao({
+                x: cabeADireita ? caixa.right + 8 : caixa.left - 8,
+                y: Math.max(8, Math.min(caixa.top, window.innerHeight - 220)),
+                lado: cabeADireita ? "direita" : "esquerda",
+                cor: ev.color || "#0f6cbd",
+                uc: ev.title,
+                curso: String(p.curso ?? ""),
+                professor: String(p.professor ?? ""),
+                turma: String(p.turma ?? ""),
+                data: `${diaSemana}, ${formatarData(inicio.data)}`,
+                horario: `${inicio.hora} – ${fim.hora}`,
+                lote: Boolean(p.serieId),
+              });
+            }}
+            eventMouseLeave={() => setBalao(null)}
             eventClick={(info) => {
+              setBalao(null);
               const ev = info.event;
               const p = ev.extendedProps as Omit<
                 DadosAlocacao,
@@ -242,6 +293,49 @@ export default function Calendario({
           />
         </div>
       </div>
+
+      {balao && (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-50 w-72 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-xl"
+          style={{
+            top: balao.y,
+            left: balao.x,
+            transform:
+              balao.lado === "esquerda" ? "translateX(-100%)" : undefined,
+            borderTop: `4px solid ${balao.cor}`,
+          }}
+        >
+          <p className="text-base leading-snug font-semibold text-gray-900">
+            {balao.uc}
+          </p>
+          <p className="mb-3 text-gray-500">{balao.curso}</p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <dt className="text-gray-500">Professor</dt>
+            <dd className="flex items-center gap-1.5 font-medium text-gray-900">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ background: balao.cor }}
+              />
+              {balao.professor}
+            </dd>
+            <dt className="text-gray-500">Turma</dt>
+            <dd>{balao.turma || "—"}</dd>
+            <dt className="text-gray-500">Data</dt>
+            <dd>{balao.data}</dd>
+            <dt className="text-gray-500">Horário</dt>
+            <dd>{balao.horario}</dd>
+          </dl>
+          {balao.lote && (
+            <p className="mt-3 text-xs text-gray-500">
+              Faz parte de uma alocação em lote.
+            </p>
+          )}
+          <p className="mt-2 text-xs text-gray-400">
+            {podeEditar ? "Clique para editar." : "Clique para ver detalhes."}
+          </p>
+        </div>
+      )}
 
       {dialogo && (
         <DialogoAlocacao
