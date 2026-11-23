@@ -36,7 +36,8 @@ export default function Calendario({
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
 
-  const periodoInvalido = dataInicio !== "" && dataFim !== "" && dataFim < dataInicio;
+  const periodoInvalido =
+    dataInicio !== "" && dataFim !== "" && dataFim < dataInicio;
 
   // "end" do FullCalendar é exclusivo: soma 1 dia para incluir a data de fim.
   const fimExclusivo = useMemo(() => {
@@ -72,8 +73,12 @@ export default function Calendario({
     async (info: { startStr: string; endStr: string }) => {
       // No servidor (pré-renderização) não busca nada; a busca acontece no navegador.
       if (typeof window === "undefined") return [];
-      const params = new URLSearchParams({ inicio: info.startStr, fim: info.endStr });
-      if (selecionados.length) params.set("professores", selecionados.join(","));
+      const params = new URLSearchParams({
+        inicio: info.startStr,
+        fim: info.endStr,
+      });
+      if (selecionados.length)
+        params.set("professores", selecionados.join(","));
       const res = await fetch(`/api/alocacoes?${params}`);
       if (!res.ok) throw new Error("Falha ao carregar as alocações.");
       return res.json();
@@ -88,20 +93,25 @@ export default function Calendario({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 lg:flex-row">
-      <aside className="flex w-full flex-col gap-6 lg:w-64 lg:shrink-0">
-        <section>
-          <h2 className="mb-2 text-sm font-semibold">Professores</h2>
+    <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:items-start">
+      <aside className="flex w-full flex-col gap-4 lg:w-64 lg:shrink-0">
+        <section className="cartao p-4">
+          <h2 className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            Professores
+          </h2>
           <ul className="flex flex-col gap-1">
             {professores.map((p) => (
               <li key={p.id}>
-                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-md px-1.5 py-1 text-sm text-gray-700 hover:bg-gray-50">
                   <input
                     type="checkbox"
                     checked={selecionados.includes(p.id)}
                     onChange={() => alternar(p.id)}
                   />
-                  <span className="h-3 w-3 rounded-sm" style={{ background: p.cor }} />
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full"
+                    style={{ background: p.cor }}
+                  />
                   {p.nome}
                 </label>
               </li>
@@ -109,7 +119,7 @@ export default function Calendario({
           </ul>
           {selecionados.length > 0 && (
             <button
-              className="mt-2 text-sm text-blue-700 underline"
+              className="link mt-3 text-sm"
               onClick={() => setSelecionados([])}
             >
               Limpar filtro
@@ -117,39 +127,42 @@ export default function Calendario({
           )}
         </section>
 
-        <section className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">Período</h2>
-          <label className="flex flex-col text-sm">
+        <section className="cartao flex flex-col gap-3 p-4">
+          <h2 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            Período
+          </h2>
+          <label className="rotulo">
             Data de início
             <input
               type="date"
-              className="rounded border px-2 py-1"
+              className="campo"
               value={dataInicio}
               onChange={(e) => setDataInicio(e.target.value)}
             />
           </label>
-          <label className="flex flex-col text-sm">
+          <label className="rotulo">
             Data de fim
             <input
               type="date"
-              className="rounded border px-2 py-1"
+              className="campo"
               value={dataFim}
               onChange={(e) => setDataFim(e.target.value)}
             />
           </label>
           {periodoInvalido && (
-            <p className="text-sm text-red-700">
+            <p className="alerta-erro">
               A data de fim não pode ser anterior à data de início.
             </p>
           )}
         </section>
       </aside>
 
-      <div className="min-w-0 flex-1 overflow-x-auto">
+      <div className="cartao min-w-0 flex-1 overflow-x-auto p-3 sm:p-4">
         {modoPeriodo && (
-          <p className="mb-2 text-sm">
+          <p className="alerta-info mb-3">
             Mostrando de <strong>{formatarData(dataInicio)}</strong> a{" "}
-            <strong>{formatarData(dataFim)}</strong>. Role para o lado para ver todos os dias.
+            <strong>{formatarData(dataFim)}</strong>. Role para o lado para ver
+            todos os dias.
           </p>
         )}
         <div style={larguraMinima ? { minWidth: larguraMinima } : undefined}>
@@ -157,28 +170,44 @@ export default function Calendario({
             // Recria o calendário ao trocar entre semana e período.
             key={modoPeriodo ? `periodo-${dataInicio}-${dataFim}` : "semana"}
             ref={calendario}
-          plugins={[timeGridPlugin, interactionPlugin, formaTheme]}
-          selectable={podeEditar}
-          selectMirror
-          select={(info) => {
-            const inicio = separar(info.startStr);
-            const fim = separar(info.endStr);
-            setDialogo({ data: inicio.data, horaInicio: inicio.hora, horaFim: fim.hora });
-            calendario.current?.getApi().unselect();
-          }}
-          eventClick={(info) => {
-            const ev = info.event;
-            const p = ev.extendedProps as Omit<DadosAlocacao, "data" | "horaInicio" | "horaFim">;
-            const inicio = separar(ev.startStr);
-            const fim = separar(ev.endStr);
-            setDialogo({ ...p, id: Number(ev.id), data: inicio.data, horaInicio: inicio.hora, horaFim: fim.hora });
-          }}
+            plugins={[timeGridPlugin, interactionPlugin, formaTheme]}
+            selectable={podeEditar}
+            selectMirror
+            select={(info) => {
+              const inicio = separar(info.startStr);
+              const fim = separar(info.endStr);
+              setDialogo({
+                data: inicio.data,
+                horaInicio: inicio.hora,
+                horaFim: fim.hora,
+              });
+              calendario.current?.getApi().unselect();
+            }}
+            eventClick={(info) => {
+              const ev = info.event;
+              const p = ev.extendedProps as Omit<
+                DadosAlocacao,
+                "data" | "horaInicio" | "horaFim"
+              >;
+              const inicio = separar(ev.startStr);
+              const fim = separar(ev.endStr);
+              setDialogo({
+                ...p,
+                id: Number(ev.id),
+                data: inicio.data,
+                horaInicio: inicio.hora,
+                horaFim: fim.hora,
+              });
+            }}
             locale={ptBr}
             timeZone="America/Sao_Paulo"
             views={{
               periodo: {
                 type: "timeGrid",
-                visibleRange: { start: dataInicio, end: fimExclusivo ?? dataInicio },
+                visibleRange: {
+                  start: dataInicio,
+                  end: fimExclusivo ?? dataInicio,
+                },
               },
             }}
             initialView={modoPeriodo ? "periodo" : "timeGridWeek"}
@@ -203,7 +232,11 @@ export default function Calendario({
                 <div className="font-semibold">{arg.timeText}</div>
                 <div>{arg.event.title}</div>
                 <div>{String(arg.event.extendedProps.professor)}</div>
-                <div className="opacity-80">Turma {String(arg.event.extendedProps.turma)}</div>
+                {arg.event.extendedProps.turma ? (
+                  <div className="opacity-80">
+                    Turma {String(arg.event.extendedProps.turma)}
+                  </div>
+                ) : null}
               </div>
             )}
           />

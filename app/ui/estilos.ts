@@ -1,3 +1,3 @@
-// Classes repetidas nos formulários.
-export const campo = "rounded border px-2 py-1 text-sm";
-export const rotulo = "flex flex-col gap-1 text-sm";
+// Atalhos para as classes definidas em app/globals.css.
+export const campo = "campo";
+export const rotulo = "rotulo";

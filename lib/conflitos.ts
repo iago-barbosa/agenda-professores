@@ -28,7 +28,7 @@ const formatoHora = new Intl.DateTimeFormat("pt-BR", {
 export async function buscarConflitos(
   ocorrencias: Ocorrencia[],
   professorId: number,
-  turmaId: number,
+  turmaId: number | null,
   ignorar: number[] = [],
 ): Promise<Conflito[]> {
   if (ocorrencias.length === 0) return [];
@@ -40,7 +40,7 @@ export async function buscarConflitos(
       id: { notIn: ignorar },
       inicio: { lt: fim },
       fim: { gt: inicio },
-      OR: [{ professorId }, { turmaId }],
+      OR: turmaId ? [{ professorId }, { turmaId }] : [{ professorId }],
     },
     include: { professor: true, uc: true, turma: true },
   });

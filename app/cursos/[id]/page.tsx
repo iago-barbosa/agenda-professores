@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/auth";
-import Cabecalho from "@/app/ui/cabecalho";
+import Pagina, { Carregando } from "@/app/ui/pagina";
 import FormularioAcao from "@/app/ui/formulario-acao";
 import BotaoExcluir from "@/app/ui/botao-excluir";
 import { campo, rotulo } from "@/app/ui/estilos";
@@ -32,28 +32,37 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
       })
     : null;
   if (!curso) notFound();
-  const podeNovaUC = curso.modalidade !== "APERFEICOAMENTO" || curso.ucs.length === 0;
+  const podeNovaUC =
+    curso.modalidade !== "APERFEICOAMENTO" || curso.ucs.length === 0;
 
   return (
-    <>
-      <Cabecalho usuario={usuario} />
-      <Link href="/cursos" className="text-sm text-[#0f6cbd] underline">
-        ← Voltar para cursos
-      </Link>
-      <h1 className="text-xl font-semibold">{curso.nome}</h1>
-
-      <section className="rounded border p-4">
-        <h2 className="mb-3 font-semibold">Dados do curso</h2>
-        <FormularioAcao acao={editarCurso.bind(null, curso.id)} textoBotao="Salvar curso">
+    <Pagina
+      usuario={usuario}
+      titulo={curso.nome}
+      acoes={
+        <Link href="/cursos" className="botao botao-secundario">
+          Voltar
+        </Link>
+      }
+    >
+      <section className="cartao">
+        <h2 className="cartao-titulo">Dados do curso</h2>
+        <FormularioAcao
+          acao={editarCurso.bind(null, curso.id)}
+          textoBotao="Salvar curso"
+        >
           <CamposCurso curso={curso} />
         </FormularioAcao>
       </section>
 
-      <section className="rounded border p-4">
-        <h2 className="mb-3 font-semibold">Unidades curriculares (UCs)</h2>
+      <section className="cartao">
+        <h2 className="cartao-titulo">Unidades curriculares (UCs)</h2>
         <ul className="mb-4 flex flex-col gap-2">
           {curso.ucs.map((uc) => (
-            <li key={uc.id} className="flex flex-wrap items-end gap-3 border-b pb-2">
+            <li
+              key={uc.id}
+              className="flex flex-wrap items-end gap-3 border-b border-gray-100 pb-3"
+            >
               <FormularioAcao
                 acao={editarUC.bind(null, uc.id)}
                 textoBotao="Salvar"
@@ -61,7 +70,12 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
               >
                 <label className={rotulo}>
                   Nome
-                  <input name="nome" required defaultValue={uc.nome} className={`${campo} w-72`} />
+                  <input
+                    name="nome"
+                    required
+                    defaultValue={uc.nome}
+                    className={`${campo} w-72`}
+                  />
                 </label>
                 <label className={rotulo}>
                   Carga horária (h)
@@ -74,10 +88,15 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
                   />
                 </label>
               </FormularioAcao>
-              <BotaoExcluir acao={excluirUC.bind(null, uc.id)} confirmacao={`Excluir a UC ${uc.nome}?`} />
+              <BotaoExcluir
+                acao={excluirUC.bind(null, uc.id)}
+                confirmacao={`Excluir a UC ${uc.nome}?`}
+              />
             </li>
           ))}
-          {curso.ucs.length === 0 && <li className="text-sm opacity-70">Nenhuma UC ainda.</li>}
+          {curso.ucs.length === 0 && (
+            <li className="text-sm text-gray-500">Nenhuma UC ainda.</li>
+          )}
         </ul>
         {podeNovaUC ? (
           <FormularioAcao
@@ -92,19 +111,29 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
             </label>
             <label className={rotulo}>
               Carga horária (h)
-              <input name="cargaHoraria" type="number" min={0} className={`${campo} w-28`} />
+              <input
+                name="cargaHoraria"
+                type="number"
+                min={0}
+                className={`${campo} w-28`}
+              />
             </label>
           </FormularioAcao>
         ) : (
-          <p className="text-sm opacity-70">Cursos de Aperfeiçoamento têm uma única UC.</p>
+          <p className="text-sm text-gray-500">
+            Cursos de Aperfeiçoamento têm uma única UC.
+          </p>
         )}
       </section>
 
-      <section className="rounded border p-4">
-        <h2 className="mb-3 font-semibold">Turmas</h2>
+      <section className="cartao">
+        <h2 className="cartao-titulo">Turmas</h2>
         <ul className="mb-4 flex flex-col gap-2">
           {curso.turmas.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-end gap-3 border-b pb-2">
+            <li
+              key={t.id}
+              className="flex flex-wrap items-end gap-3 border-b border-gray-100 pb-3"
+            >
               <FormularioAcao
                 acao={editarTurma.bind(null, t.id)}
                 textoBotao="Salvar"
@@ -112,13 +141,23 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
               >
                 <label className={rotulo}>
                   Código
-                  <input name="codigo" required defaultValue={t.codigo} className={campo} />
+                  <input
+                    name="codigo"
+                    required
+                    defaultValue={t.codigo}
+                    className={campo}
+                  />
                 </label>
               </FormularioAcao>
-              <BotaoExcluir acao={excluirTurma.bind(null, t.id)} confirmacao={`Excluir a turma ${t.codigo}?`} />
+              <BotaoExcluir
+                acao={excluirTurma.bind(null, t.id)}
+                confirmacao={`Excluir a turma ${t.codigo}?`}
+              />
             </li>
           ))}
-          {curso.turmas.length === 0 && <li className="text-sm opacity-70">Nenhuma turma ainda.</li>}
+          {curso.turmas.length === 0 && (
+            <li className="text-sm text-gray-500">Nenhuma turma ainda.</li>
+          )}
         </ul>
         <FormularioAcao
           acao={criarTurma.bind(null, curso.id)}
@@ -133,21 +172,25 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
         </FormularioAcao>
       </section>
 
-      <BotaoExcluir
-        acao={excluirCurso.bind(null, curso.id)}
-        confirmacao={`Excluir o curso ${curso.nome}, com todas as UCs e turmas?`}
-        texto="Excluir curso"
-      />
-    </>
+      <section className="cartao">
+        <h2 className="cartao-titulo">Excluir curso</h2>
+        <p className="mb-3 text-sm text-gray-500">
+          Remove o curso com todas as UCs e turmas.
+        </p>
+        <BotaoExcluir
+          acao={excluirCurso.bind(null, curso.id)}
+          confirmacao={`Excluir o curso ${curso.nome}, com todas as UCs e turmas?`}
+          texto="Excluir curso"
+        />
+      </section>
+    </Pagina>
   );
 }
 
 export default function PaginaCurso({ params }: PageProps<"/cursos/[id]">) {
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4">
-      <Suspense fallback={<p className="text-sm">Carregando…</p>}>
-        <Conteudo params={params} />
-      </Suspense>
-    </main>
+    <Suspense fallback={<Carregando />}>
+      <Conteudo params={params} />
+    </Suspense>
   );
 }

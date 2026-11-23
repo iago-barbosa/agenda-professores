@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/auth";
-import Cabecalho from "@/app/ui/cabecalho";
+import Pagina, { Carregando } from "@/app/ui/pagina";
 import FormularioAcao from "@/app/ui/formulario-acao";
 import BotaoExcluir from "@/app/ui/botao-excluir";
 import CamposProfessor from "../campos";
@@ -12,38 +12,42 @@ import { editarProfessor, excluirProfessor } from "../actions";
 async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirAdmin();
   const id = Number((await params).id);
-  const professor = Number.isInteger(id)
-    ? await prisma.professor.findUnique({ where: { id } })
-    : null;
+  const professor = Number.isInteger(id) ? await prisma.professor.findUnique({ where: { id } }) : null;
   if (!professor) notFound();
 
   return (
-    <>
-      <Cabecalho usuario={usuario} />
-      <Link href="/professores" className="text-sm text-[#0f6cbd] underline">
-        ← Voltar para professores
-      </Link>
-      <h1 className="text-xl font-semibold">Editar professor</h1>
-      <section className="rounded border p-4">
-        <FormularioAcao acao={editarProfessor.bind(null, professor.id)} textoBotao="Salvar">
+    <Pagina
+      usuario={usuario}
+      titulo={professor.nome}
+      acoes={
+        <Link href="/professores" className="botao botao-secundario">
+          Voltar
+        </Link>
+      }
+    >
+      <section className="cartao max-w-3xl">
+        <h2 className="cartao-titulo">Dados do professor</h2>
+        <FormularioAcao acao={editarProfessor.bind(null, professor.id)} textoBotao="Salvar alterações">
           <CamposProfessor professor={professor} />
         </FormularioAcao>
       </section>
-      <BotaoExcluir
-        acao={excluirProfessor.bind(null, professor.id)}
-        confirmacao={`Excluir o professor ${professor.nome}?`}
-        texto="Excluir professor"
-      />
-    </>
+      <section className="cartao max-w-3xl">
+        <h2 className="cartao-titulo">Excluir</h2>
+        <p className="mb-3 text-sm text-gray-500">Só é possível excluir um professor sem aulas. Para escondê-lo, desmarque “Ativo”.</p>
+        <BotaoExcluir
+          acao={excluirProfessor.bind(null, professor.id)}
+          confirmacao={`Excluir o professor ${professor.nome}?`}
+          texto="Excluir professor"
+        />
+      </section>
+    </Pagina>
   );
 }
 
 export default function PaginaProfessor({ params }: PageProps<"/professores/[id]">) {
   return (
-    <main className="flex flex-1 flex-col gap-4 p-4">
-      <Suspense fallback={<p className="text-sm">Carregando…</p>}>
-        <Conteudo params={params} />
-      </Suspense>
-    </main>
+    <Suspense fallback={<Carregando />}>
+      <Conteudo params={params} />
+    </Suspense>
   );
 }
