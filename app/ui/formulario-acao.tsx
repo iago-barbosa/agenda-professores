@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   startTransition,
   useActionState,
   useEffect,
@@ -27,7 +28,20 @@ export default function FormularioAcao({
   className = "flex flex-col gap-4",
   aoSalvar,
 }: Props) {
-  const [estado, executar, enviando] = useActionState(acao, {});
+  // `chave` muda a cada salvamento com sucesso quando limparAoSalvar está ligado:
+  // os campos são recriados do zero (inclusive os que guardam estado no React,
+  // como curso/UC/turma digitáveis). Em erro ou conflito, a chave não muda e nada se perde.
+  const [estado, executar, enviando] = useActionState(
+    async (anterior: EstadoAcao & { chave?: number }, dados: FormData) => {
+      const r = await acao(anterior, dados);
+      const salvou = r.versao !== undefined && !r.erro && !r.conflitos?.length;
+      return {
+        ...r,
+        chave: salvou && limparAoSalvar ? r.versao : anterior.chave,
+      };
+    },
+    {} as EstadoAcao & { chave?: number },
+  );
   const form = useRef<HTMLFormElement>(null);
   const ultimaVersao = useRef<number | undefined>(undefined);
 
@@ -51,7 +65,7 @@ export default function FormularioAcao({
         startTransition(() => executar(dados));
       }}
     >
-      {children}
+      <Fragment key={estado.chave ?? 0}>{children}</Fragment>
       {estado.conflitos && estado.conflitos.length > 0 && (
         <div role="alert" className="alerta-aviso">
           <p className="mb-1 font-semibold">
