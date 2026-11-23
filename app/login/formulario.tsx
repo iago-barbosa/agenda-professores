@@ -16,7 +16,7 @@ export default function FormularioLogin() {
 
   return (
     <form ref={formulario} action={acao} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="rotulo">
         E-mail
         <input
           name="email"
@@ -24,28 +24,28 @@ export default function FormularioLogin() {
           autoComplete="username"
           required
           defaultValue={estado.email}
-          className="rounded border px-3 py-2"
+          className="campo"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="rotulo">
         Senha
         <input
           name="senha"
           type="password"
           autoComplete="current-password"
           required
-          className="rounded border px-3 py-2"
+          className="campo"
         />
       </label>
       {estado.erro && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="alerta-erro">
           {estado.erro}
         </p>
       )}
       <button
         type="submit"
         disabled={enviando}
-        className="rounded bg-[#0f6cbd] px-3 py-2 font-medium text-white disabled:opacity-60"
+        className="botao botao-primario w-full"
       >
         {enviando ? "Entrando…" : "Entrar"}
       </button>

@@ -31,7 +31,13 @@ type Props = {
   aoAlterar: () => void;
 };
 
-export default function DialogoAlocacao({ dados, catalogo, podeEditar, aoFechar, aoAlterar }: Props) {
+export default function DialogoAlocacao({
+  dados,
+  catalogo,
+  podeEditar,
+  aoFechar,
+  aoAlterar,
+}: Props) {
   const dialogo = useRef<HTMLDialogElement>(null);
   const [mensagem, setMensagem] = useState<string>();
   const [excluindo, setExcluindo] = useState(false);
@@ -63,40 +69,50 @@ export default function DialogoAlocacao({ dados, catalogo, podeEditar, aoFechar,
     <dialog
       ref={dialogo}
       onClose={aoFechar}
-      className="m-auto w-full max-w-xl rounded-lg p-0 shadow-xl backdrop:bg-black/40"
+      className="m-auto w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-gray-900/40"
     >
-      <div className="flex flex-col gap-4 p-5">
-        <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-5 p-6">
+        <div className="flex items-start justify-between border-b border-gray-100 pb-4">
           <h2 className="text-lg font-semibold">
-            {!podeEditar ? "Detalhes da aula" : dados.id ? "Editar aula" : "Nova aula"}
+            {!podeEditar
+              ? "Detalhes da aula"
+              : dados.id
+                ? "Editar aula"
+                : "Nova aula"}
           </h2>
-          <button type="button" onClick={() => dialogo.current?.close()} aria-label="Fechar" className="px-2 text-lg">
+          <button
+            type="button"
+            onClick={() => dialogo.current?.close()}
+            aria-label="Fechar"
+            className="-mr-2 rounded-md px-2 text-2xl leading-none text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+          >
             ×
           </button>
         </div>
 
         {!podeEditar ? (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            <dt className="opacity-70">Data</dt>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt className="font-medium text-gray-500">Data</dt>
             <dd>{dataBr}</dd>
-            <dt className="opacity-70">Horário</dt>
+            <dt className="font-medium text-gray-500">Horário</dt>
             <dd>
               {dados.horaInicio} – {dados.horaFim}
             </dd>
-            <dt className="opacity-70">Professor</dt>
+            <dt className="font-medium text-gray-500">Professor</dt>
             <dd>{dados.professor}</dd>
-            <dt className="opacity-70">Curso</dt>
+            <dt className="font-medium text-gray-500">Curso</dt>
             <dd>{dados.curso}</dd>
-            <dt className="opacity-70">UC</dt>
+            <dt className="font-medium text-gray-500">UC</dt>
             <dd>{dados.uc}</dd>
-            <dt className="opacity-70">Turma</dt>
-            <dd>{dados.turma}</dd>
+            <dt className="font-medium text-gray-500">Turma</dt>
+            <dd>{dados.turma || "—"}</dd>
           </dl>
         ) : (
           <>
             {dados.serieId && (
-              <p className="rounded bg-blue-50 p-2 text-sm text-blue-900">
-                Esta aula faz parte de uma alocação em lote. Salvar aqui altera só esta data.
+              <p className="alerta-info">
+                Esta aula faz parte de uma alocação em lote. Salvar aqui altera
+                só esta data.
               </p>
             )}
             <FormularioAcao
@@ -112,30 +128,60 @@ export default function DialogoAlocacao({ dados, catalogo, podeEditar, aoFechar,
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className={rotulo}>
                   Data
-                  <input name="data" type="date" required defaultValue={dados.data} className={campo} />
+                  <input
+                    name="data"
+                    type="date"
+                    required
+                    defaultValue={dados.data}
+                    className={campo}
+                  />
                 </label>
                 <label className={rotulo}>
                   Início
-                  <input name="horaInicio" type="time" required step={300} defaultValue={dados.horaInicio} className={campo} />
+                  <input
+                    name="horaInicio"
+                    type="time"
+                    required
+                    step={300}
+                    defaultValue={dados.horaInicio}
+                    className={campo}
+                  />
                 </label>
                 <label className={rotulo}>
                   Fim
-                  <input name="horaFim" type="time" required step={300} defaultValue={dados.horaFim} className={campo} />
+                  <input
+                    name="horaFim"
+                    type="time"
+                    required
+                    step={300}
+                    defaultValue={dados.horaFim}
+                    className={campo}
+                  />
                 </label>
               </div>
             </FormularioAcao>
 
             {dados.id && (
-              <div className="flex flex-wrap items-center gap-4 border-t pt-3 text-sm">
-                <button type="button" disabled={excluindo} onClick={() => excluir("uma")} className="text-red-700 underline">
+              <div className="flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4 text-sm">
+                <button
+                  type="button"
+                  disabled={excluindo}
+                  onClick={() => excluir("uma")}
+                  className="botao botao-perigo"
+                >
                   Excluir esta aula
                 </button>
                 {dados.serieId && (
-                  <button type="button" disabled={excluindo} onClick={() => excluir("serie")} className="text-red-700 underline">
+                  <button
+                    type="button"
+                    disabled={excluindo}
+                    onClick={() => excluir("serie")}
+                    className="botao botao-perigo"
+                  >
                     Excluir toda a série
                   </button>
                 )}
-                {mensagem && <span className="text-red-700">{mensagem}</span>}
+                {mensagem && <span className="alerta-erro">{mensagem}</span>}
               </div>
             )}
           </>

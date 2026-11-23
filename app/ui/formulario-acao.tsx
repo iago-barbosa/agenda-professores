@@ -1,6 +1,12 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, type ReactNode } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import type { EstadoAcao } from "@/lib/formulario";
 
 type Props = {
@@ -18,7 +24,7 @@ export default function FormularioAcao({
   children,
   textoBotao,
   limparAoSalvar = false,
-  className = "flex flex-col gap-3",
+  className = "flex flex-col gap-4",
   aoSalvar,
 }: Props) {
   const [estado, executar, enviando] = useActionState(acao, {});
@@ -47,7 +53,7 @@ export default function FormularioAcao({
     >
       {children}
       {estado.conflitos && estado.conflitos.length > 0 && (
-        <div role="alert" className="rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+        <div role="alert" className="alerta-aviso">
           <p className="mb-1 font-semibold">
             {estado.conflitos.length} conflito(s) de horário encontrado(s):
           </p>
@@ -58,23 +64,29 @@ export default function FormularioAcao({
               </li>
             ))}
           </ul>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="confirmarConflitos" />
+          <label className="flex items-center gap-2 font-medium">
+            <input
+              type="checkbox"
+              name="confirmarConflitos"
+              className="h-4 w-4"
+            />
             Salvar mesmo assim
           </label>
         </div>
       )}
       {estado.erro && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="alerta-erro">
           {estado.erro}
         </p>
       )}
-      {estado.ok && !estado.erro && <p className="text-sm text-green-700">{estado.ok}</p>}
+      {estado.ok && !estado.erro && (
+        <p className="alerta-sucesso">{estado.ok}</p>
+      )}
       <div>
         <button
           type="submit"
           disabled={enviando}
-          className="rounded bg-[#0f6cbd] px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+          className="botao botao-primario"
         >
           {enviando ? "Salvando…" : textoBotao}
         </button>

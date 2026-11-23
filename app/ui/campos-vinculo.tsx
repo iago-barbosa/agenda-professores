@@ -1,27 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Catalogo } from "@/lib/catalogo";
-import { campo, rotulo } from "@/app/ui/estilos";
 
-/** Professor, curso, UC e turma. UC e turma mostram só as do curso escolhido. */
+const NOME_MODALIDADE = {
+  TECNICO: "Técnico",
+  APRENDIZAGEM: "Aprendizagem",
+  APERFEICOAMENTO: "Aperfeiçoamento",
+} as const;
+
+const limpar = (s: string) => s.trim().replace(/\s+/g, " ");
+const igual = (a: string, b: string) =>
+  limpar(a).localeCompare(limpar(b), "pt-BR", { sensitivity: "base" }) === 0;
+
+/**
+ * Professor (lista) + curso, UC e turma digitáveis, com sugestões do que já existe.
+ * O que não existir é cadastrado ao salvar.
+ */
 export default function CamposVinculo({
   catalogo,
   inicial,
 }: {
   catalogo: Catalogo;
-  inicial?: { professorId?: number; cursoId?: number; ucId?: number; turmaId?: number };
+  inicial?: {
+    professorId?: number;
+    curso?: string;
+    uc?: string;
+    turma?: string;
+  };
 }) {
-  const [cursoId, setCursoId] = useState<number | "">(inicial?.cursoId ?? "");
-  const curso = catalogo.cursos.find((c) => c.id === cursoId);
+  const id = useId();
+  const [curso, setCurso] = useState(inicial?.curso ?? "");
+  const [uc, setUc] = useState(inicial?.uc ?? "");
+  const [turma, setTurma] = useState(inicial?.turma ?? "");
+  const [modalidade, setModalidade] = useState("");
+
+  const cursoExistente = catalogo.cursos.find((c) => igual(c.nome, curso));
+  const ucExistente = cursoExistente?.ucs.find((u) => igual(u.nome, uc));
+  const turmaExistente = cursoExistente?.turmas.find((t) =>
+    igual(t.codigo, turma),
+  );
+  const novo = (texto: string, existe: unknown) =>
+    limpar(texto) !== "" && !existe;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <label className={rotulo}>
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="rotulo">
         Professor
-        <select name="professorId" required defaultValue={inicial?.professorId ?? ""} className={campo}>
+        <select
+          name="professorId"
+          required
+          defaultValue={inicial?.professorId ?? ""}
+          className="campo"
+        >
           <option value="" disabled>
-            Escolha…
+            Escolha o professor…
           </option>
           {catalogo.professores.map((p) => (
             <option key={p.id} value={p.id}>
@@ -30,65 +63,115 @@ export default function CamposVinculo({
           ))}
         </select>
       </label>
-      <label className={rotulo}>
+
+      <label className="rotulo">
         Curso
-        <select
+        <input
+          name="curso"
           required
-          value={cursoId}
-          onChange={(e) => setCursoId(e.target.value ? Number(e.target.value) : "")}
-          className={campo}
-        >
-          <option value="" disabled>
-            Escolha…
-          </option>
+          list={`${id}-cursos`}
+          value={curso}
+          onChange={(e) => setCurso(e.target.value)}
+          placeholder="Digite ou escolha um curso"
+          autoComplete="off"
+          className="campo"
+        />
+        <datalist id={`${id}-cursos`}>
           {catalogo.cursos.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
+            <option key={c.id} value={c.nome} />
           ))}
-        </select>
+        </datalist>
+        {novo(curso, cursoExistente) && (
+          <span className="ajuda">Curso novo: será cadastrado ao salvar.</span>
+        )}
       </label>
-      {/* key: ao trocar de curso, volta a pedir a escolha da UC e da turma */}
-      <label className={rotulo}>
-        UC
-        <select
-          key={`uc-${cursoId}`}
-          name="ucId"
+
+      {cursoExistente ? (
+        <input
+          type="hidden"
+          name="modalidade"
+          value={cursoExistente.modalidade}
+        />
+      ) : (
+        novo(curso, cursoExistente) && (
+          <label className="rotulo sm:col-span-2">
+            Modalidade do novo curso
+            <select
+              name="modalidade"
+              required
+              value={modalidade}
+              onChange={(e) => setModalidade(e.target.value)}
+              className="campo sm:max-w-xs"
+            >
+              <option value="" disabled>
+                Escolha…
+              </option>
+              {Object.entries(NOME_MODALIDADE).map(([valor, nome]) => (
+                <option key={valor} value={valor}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
+        )
+      )}
+
+      <label className="rotulo">
+        UC (Unidade Curricular)
+        <input
+          name="uc"
           required
-          disabled={!curso}
-          defaultValue={curso && curso.id === inicial?.cursoId ? inicial?.ucId : curso?.ucs.length === 1 ? curso.ucs[0].id : ""}
-          className={campo}
-        >
-          <option value="" disabled>
-            {curso ? "Escolha…" : "Escolha o curso primeiro"}
-          </option>
-          {curso?.ucs.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nome}
-            </option>
+          list={`${id}-ucs`}
+          value={uc}
+          onChange={(e) => setUc(e.target.value)}
+          placeholder="Digite ou escolha a UC"
+          autoComplete="off"
+          className="campo"
+        />
+        <datalist id={`${id}-ucs`}>
+          {cursoExistente?.ucs.map((u) => (
+            <option key={u.id} value={u.nome} />
           ))}
-        </select>
+        </datalist>
+        {novo(uc, ucExistente) && (
+          <span className="ajuda">UC nova: será cadastrada ao salvar.</span>
+        )}
       </label>
-      <label className={rotulo}>
+
+      <label className="rotulo">
         Turma
-        <select
-          key={`turma-${cursoId}`}
-          name="turmaId"
+        <input
+          name="turma"
           required
-          disabled={!curso}
-          defaultValue={curso && curso.id === inicial?.cursoId ? inicial?.turmaId : ""}
-          className={campo}
-        >
-          <option value="" disabled>
-            {curso ? "Escolha…" : "Escolha o curso primeiro"}
-          </option>
-          {curso?.turmas.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.codigo}
-            </option>
+          list={`${id}-turmas`}
+          value={turma}
+          onChange={(e) => setTurma(e.target.value)}
+          placeholder="Ex.: TDS-2027-1"
+          autoComplete="off"
+          className="campo"
+        />
+        <datalist id={`${id}-turmas`}>
+          {cursoExistente?.turmas.map((t) => (
+            <option key={t.id} value={t.codigo} />
           ))}
-        </select>
+        </datalist>
+        {novo(turma, turmaExistente) && (
+          <span className="ajuda">Turma nova: será cadastrada ao salvar.</span>
+        )}
       </label>
+
+      {novo(uc, ucExistente) && (
+        <label className="rotulo">
+          Carga horária da UC (opcional)
+          <input
+            name="cargaHoraria"
+            type="number"
+            min={0}
+            placeholder="Horas"
+            className="campo sm:max-w-40"
+          />
+        </label>
+      )}
     </div>
   );
 }

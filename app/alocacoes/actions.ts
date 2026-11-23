@@ -1,25 +1,19 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/auth";
 import { buscarConflitos } from "@/lib/conflitos";
 import { dataHoraLocal, gerarOcorrencias, validarSerie } from "@/lib/recorrencia";
 import { executar, inteiro, texto, ErroFormulario, type EstadoAcao } from "@/lib/formulario";
+import { resolverVinculos } from "@/lib/vinculos";
 
-/** Confere se professor, UC e turma existem e se UC e turma são do mesmo curso. */
-async function lerVinculos(formData: FormData) {
-  const professorId = inteiro(formData, "professorId", "Professor")!;
-  const ucId = inteiro(formData, "ucId", "UC")!;
-  const turmaId = inteiro(formData, "turmaId", "Turma")!;
-  const [professor, uc, turma] = await Promise.all([
-    prisma.professor.findUnique({ where: { id: professorId } }),
-    prisma.uC.findUnique({ where: { id: ucId } }),
-    prisma.turma.findUnique({ where: { id: turmaId } }),
-  ]);
-  if (!professor) throw new ErroFormulario("Professor não encontrado.");
-  if (!uc || !turma) throw new ErroFormulario("UC ou turma não encontrada.");
-  if (uc.cursoId !== turma.cursoId) throw new ErroFormulario("A UC e a turma precisam ser do mesmo curso.");
-  return { professorId, ucId, turmaId };
+/** Cadastra curso, UC e turma novos (se for o caso) e devolve os ids. */
+async function comIds(formData: FormData) {
+  const v = await resolverVinculos(formData, true);
+  // Atualiza as sugestões dos campos (curso/UC/turma recém-cadastrados).
+  refresh();
+  return { professorId: v.professorId, ucId: v.ucId!, turmaId: v.turmaId! };
 }
 
 const querConfirmar = (formData: FormData) => formData.get("confirmarConflitos") === null;
@@ -29,7 +23,7 @@ export async function salvarAlocacao(_: EstadoAcao, formData: FormData) {
   await exigirAdmin();
   return executar(async () => {
     const id = inteiro(formData, "id", "Alocação", false);
-    const vinculos = await lerVinculos(formData);
+    const previa = await resolverVinculos(formData, false);
     const data = texto(formData, "data", "Data");
     const horaInicio = texto(formData, "horaInicio", "Hora de início");
     const horaFim = texto(formData, "horaFim", "Hora de fim");
@@ -38,9 +32,10 @@ export async function salvarAlocacao(_: EstadoAcao, formData: FormData) {
 
     const ocorrencia = { inicio: dataHoraLocal(data, horaInicio), fim: dataHoraLocal(data, horaFim) };
     if (querConfirmar(formData)) {
-      const conflitos = await buscarConflitos([ocorrencia], vinculos.professorId, vinculos.turmaId, id ? [id] : []);
+      const conflitos = await buscarConflitos([ocorrencia], previa.professorId, previa.turmaId, id ? [id] : []);
       if (conflitos.length) return { conflitos };
     }
+    const vinculos = await comIds(formData);
 
     if (id) {
       await prisma.alocacao.update({ where: { id }, data: { ...vinculos, ...ocorrencia } });
@@ -69,7 +64,7 @@ export async function excluirAlocacao(id: number, escopo: "uma" | "serie"): Prom
 export async function criarLote(_: EstadoAcao, formData: FormData) {
   await exigirAdmin();
   return executar(async () => {
-    const vinculos = await lerVinculos(formData);
+    const previa = await resolverVinculos(formData, false);
     const serie = {
       dataInicio: texto(formData, "dataInicio", "Data de início"),
       dataFim: texto(formData, "dataFim", "Data de fim"),
@@ -89,9 +84,10 @@ export async function criarLote(_: EstadoAcao, formData: FormData) {
     }
 
     if (querConfirmar(formData)) {
-      const conflitos = await buscarConflitos(ocorrencias, vinculos.professorId, vinculos.turmaId);
+      const conflitos = await buscarConflitos(ocorrencias, previa.professorId, previa.turmaId);
       if (conflitos.length) return { conflitos };
     }
+    const vinculos = await comIds(formData);
 
     await prisma.serieAlocacao.create({
       data: {

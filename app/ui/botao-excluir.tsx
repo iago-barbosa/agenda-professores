@@ -13,7 +13,10 @@ export default function BotaoExcluir({
   confirmacao: string;
   texto?: string;
 }) {
-  const [estado, executar, enviando] = useActionState(() => acao(), {} as EstadoAcao);
+  const [estado, executar, enviando] = useActionState(
+    () => acao(),
+    {} as EstadoAcao,
+  );
   return (
     <form
       action={executar}
@@ -22,14 +25,10 @@ export default function BotaoExcluir({
       }}
       className="inline-flex items-center gap-2"
     >
-      <button
-        type="submit"
-        disabled={enviando}
-        className="text-sm text-red-700 underline disabled:opacity-60"
-      >
+      <button type="submit" disabled={enviando} className="botao botao-perigo">
         {texto}
       </button>
-      {estado.erro && <span className="text-sm text-red-700">{estado.erro}</span>}
+      {estado.erro && <span className="alerta-erro">{estado.erro}</span>}
     </form>
   );
 }
