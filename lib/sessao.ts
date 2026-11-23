@@ -1,4 +1,5 @@
 import "server-only";
+import { connection } from "next/server";
 import { cookies } from "next/headers";
 import { sealData, unsealData } from "iron-session";
 
@@ -21,6 +22,9 @@ function senhaDaSessao() {
 export async function lerSessao(): Promise<Sessao | null> {
   const valor = (await cookies()).get(COOKIE_SESSAO)?.value;
   if (!valor) return null;
+  // A validação do cookie usa a hora atual (Date.now); avisa o Next que
+  // isto só roda na hora da requisição, nunca durante o pré-render.
+  await connection();
   const dados = await unsealData<Partial<Sessao>>(valor, {
     password: senhaDaSessao(),
     ttl: DURACAO_SEGUNDOS,

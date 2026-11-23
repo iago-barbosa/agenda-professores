@@ -9,8 +9,12 @@ const ipsDestaMaquina = Object.values(networkInterfaces())
   .filter((i) => i && i.family === "IPv4" && !i.internal)
   .map((i) => i!.address);
 
+// Faixas de IP de rede interna (inclui o 172.x do WSL/Hyper-V), caso o IP
+// usado no navegador não seja de uma placa desta máquina.
+const redesInternas = ["10.*.*.*", "172.*.*.*", "192.168.*.*"];
+
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ipsDestaMaquina,
+  allowedDevOrigins: [...ipsDestaMaquina, ...redesInternas],
   /* config options here */
   experimental: {
     agentFeedback: true,
