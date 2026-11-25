@@ -11,10 +11,10 @@ async function Conteudo() {
   const usuario = await exigirAdmin();
   const professores = await prisma.professor.findMany({
     orderBy: { nome: "asc" },
-    include: { _count: { select: { alocacoes: true } } },
+    include: { _count: { select: { alocacoes: true } }, usuario: { select: { ativo: true } } },
   });
   return (
-    <Pagina usuario={usuario} titulo="Professores" descricao="Cadastre os professores e escolha a cor de cada um no calendário.">
+    <Pagina usuario={usuario} titulo="Professores" descricao="Cadastre os professores, escolha a cor de cada um no calendário e libere o acesso com e-mail e senha.">
       <section className="cartao">
         <h2 className="cartao-titulo">Novo professor</h2>
         <FormularioAcao acao={criarProfessor} textoBotao="Cadastrar professor" limparAoSalvar>
@@ -28,6 +28,7 @@ async function Conteudo() {
             <tr>
               <th>Nome</th>
               <th>E-mail</th>
+              <th>Acesso</th>
               <th>Aulas</th>
               <th>Situação</th>
               <th />
@@ -41,6 +42,15 @@ async function Conteudo() {
                   {p.nome}
                 </td>
                 <td className="text-gray-600">{p.email ?? "—"}</td>
+                <td>
+                  <span
+                    className={`selo ${
+                      p.usuario?.ativo ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {p.usuario ? (p.usuario.ativo ? "Pode entrar" : "Bloqueado") : "Sem acesso"}
+                  </span>
+                </td>
                 <td>{p._count.alocacoes}</td>
                 <td>
                   <span className={`selo ${p.ativo ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600"}`}>
@@ -56,7 +66,7 @@ async function Conteudo() {
             ))}
             {professores.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-500">
+                <td colSpan={6} className="py-8 text-center text-gray-500">
                   Nenhum professor cadastrado.
                 </td>
               </tr>

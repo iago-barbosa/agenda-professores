@@ -53,9 +53,12 @@ function separar(iso: string) {
 export default function Calendario({
   catalogo,
   podeEditar,
+  meuProfessorId = null,
 }: {
   catalogo: Catalogo;
   podeEditar: boolean;
+  /** Cadastro de professor do usuário logado, para o atalho "Minha agenda". */
+  meuProfessorId?: number | null;
 }) {
   const professores = catalogo.professores;
   const calendario = useRef<CalendarRef>(null);
@@ -144,6 +147,19 @@ export default function Calendario({
         >
           Limpar filtros
         </button>
+        {meuProfessorId !== null &&
+          professores.some((p) => p.id === meuProfessorId) && (
+            <button
+              type="button"
+              onClick={() => setSelecionados([meuProfessorId])}
+              disabled={
+                selecionados.length === 1 && selecionados[0] === meuProfessorId
+              }
+              className="botao botao-primario w-full"
+            >
+              Minha agenda
+            </button>
+          )}
         <section className="cartao p-4">
           <h2 className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
             Professores

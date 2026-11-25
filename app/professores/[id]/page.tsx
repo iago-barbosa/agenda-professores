@@ -12,7 +12,7 @@ import { editarProfessor, excluirProfessor } from "../actions";
 async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
   const usuario = await exigirAdmin();
   const id = Number((await params).id);
-  const professor = Number.isInteger(id) ? await prisma.professor.findUnique({ where: { id } }) : null;
+  const professor = Number.isInteger(id) ? await prisma.professor.findUnique({ where: { id }, include: { usuario: { select: { ativo: true } } } }) : null;
   if (!professor) notFound();
 
   return (
@@ -28,7 +28,7 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
       <section className="cartao max-w-3xl">
         <h2 className="cartao-titulo">Dados do professor</h2>
         <FormularioAcao acao={editarProfessor.bind(null, professor.id)} textoBotao="Salvar alterações">
-          <CamposProfessor professor={professor} />
+          <CamposProfessor professor={professor} acesso={professor.usuario} />
         </FormularioAcao>
       </section>
       <section className="cartao max-w-3xl">

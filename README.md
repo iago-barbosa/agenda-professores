@@ -27,7 +27,9 @@ Abra http://localhost:3000. No `.env`, troque o `SESSION_PASSWORD` por uma chave
 
 O seed cria dois usuários de exemplo, só para desenvolvimento: `admin@exemplo.com` / `admin12345` (Admin) e `ana@exemplo.com` / `professor123` (Professor).
 
-Para criar ou atualizar um usuário:
+O Admin libera o acesso de um professor na tela **Professores**: basta informar o e-mail e uma senha inicial ao cadastrar (ou na edição do professor). Na edição também dá para trocar a senha e bloquear o acesso sem apagar o professor. O professor entra com esse e-mail e senha e só visualiza o calendário, com o atalho "Minha agenda".
+
+Para criar ou atualizar um usuário pelo terminal (por exemplo, o primeiro Admin):
 
 ```bash
 npm run usuario:criar -- --nome "Fulano" --email fulano@escola.com --senha "senhaForte123" --papel ADMIN
