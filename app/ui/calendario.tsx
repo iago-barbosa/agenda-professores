@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import FullCalendar, { type CalendarRef } from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
+import dayGridPlugin from "@fullcalendar/react/daygrid";
+import multiMonthPlugin from "@fullcalendar/react/multimonth";
 import interactionPlugin from "@fullcalendar/react/interaction";
 import formaTheme from "@fullcalendar/react/themes/forma";
 import ptBr from "@fullcalendar/react/locales/pt-br";
@@ -16,6 +18,8 @@ function formatarData(data: string) {
   const [ano, mes, dia] = data.split("-");
   return `${dia}/${mes}/${ano}`;
 }
+
+type Visao = "timeGridWeek" | "dayGridMonth" | "multiMonthYear";
 
 const DIAS_SEMANA = [
   "domingo",
@@ -60,6 +64,16 @@ export default function Calendario({
   const [selecionados, setSelecionados] = useState<number[]>([]);
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  // Visão escolhida (semana, mês ou ano); continua a mesma ao mexer nos filtros.
+  const [visao, setVisao] = useState<Visao>("timeGridWeek");
+  const temFiltro =
+    selecionados.length > 0 || dataInicio !== "" || dataFim !== "";
+
+  function limparFiltros() {
+    setSelecionados([]);
+    setDataInicio("");
+    setDataFim("");
+  }
 
   const periodoInvalido =
     dataInicio !== "" && dataFim !== "" && dataFim < dataInicio;
@@ -87,12 +101,14 @@ export default function Calendario({
     return Math.max(diasVisiveis, 1) * LARGURA_MINIMA_DIA + 60;
   }, [modoPeriodo, dataInicio, fimExclusivo]);
 
-  // Com só uma das datas, continua semanal e limita até onde dá para navegar.
+  // Com só uma das datas, mantém a visão e limita até onde dá para navegar.
+  // (A visão de ano do FullCalendar quebra com limite de navegação, então lá não limita.)
   const validRange = useMemo(() => {
-    if (modoPeriodo || periodoInvalido) return undefined;
+    if (modoPeriodo || periodoInvalido || visao === "multiMonthYear")
+      return undefined;
     if (!dataInicio && !fimExclusivo) return undefined;
     return { start: dataInicio || undefined, end: fimExclusivo };
-  }, [modoPeriodo, periodoInvalido, dataInicio, fimExclusivo]);
+  }, [modoPeriodo, periodoInvalido, visao, dataInicio, fimExclusivo]);
 
   const buscarEventos = useCallback(
     async (info: { startStr: string; endStr: string }) => {
@@ -120,6 +136,14 @@ export default function Calendario({
   return (
     <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:items-start">
       <aside className="flex w-full flex-col gap-4 lg:w-64 lg:shrink-0">
+        <button
+          type="button"
+          onClick={limparFiltros}
+          disabled={!temFiltro}
+          className="botao botao-secundario w-full"
+        >
+          Limpar filtros
+        </button>
         <section className="cartao p-4">
           <h2 className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
             Professores
@@ -142,14 +166,25 @@ export default function Calendario({
               </li>
             ))}
           </ul>
-          {selecionados.length > 0 && (
+          <div className="mt-3 flex gap-4 text-sm">
             <button
-              className="link mt-3 text-sm"
-              onClick={() => setSelecionados([])}
+              type="button"
+              className="link"
+              onClick={() => setSelecionados(professores.map((p) => p.id))}
             >
-              Limpar filtro
+              Marcar todos
             </button>
-          )}
+            {selecionados.length > 0 && (
+              <button
+                type="button"
+                className="link"
+                onClick={() => setSelecionados([])}
+              >
+                Desmarcar
+              </button>
+            )}
+          </div>
+          <p className="ajuda mt-2">Nenhum marcado = todos aparecem.</p>
         </section>
 
         <section className="cartao flex flex-col gap-3 p-4">
@@ -187,7 +222,11 @@ export default function Calendario({
           <p className="alerta-info mb-3">
             Mostrando de <strong>{formatarData(dataInicio)}</strong> a{" "}
             <strong>{formatarData(dataFim)}</strong>. Role para o lado para ver
-            todos os dias.
+            todos os dias. Para voltar à semana, mês ou ano, use{" "}
+            <button type="button" className="link" onClick={limparFiltros}>
+              Limpar filtros
+            </button>
+            .
           </p>
         )}
         <div style={larguraMinima ? { minWidth: larguraMinima } : undefined}>
@@ -195,17 +234,28 @@ export default function Calendario({
             // Recria o calendário ao trocar entre semana e período.
             key={modoPeriodo ? `periodo-${dataInicio}-${dataFim}` : "semana"}
             ref={calendario}
-            plugins={[timeGridPlugin, interactionPlugin, formaTheme]}
+            plugins={[
+              timeGridPlugin,
+              dayGridPlugin,
+              multiMonthPlugin,
+              interactionPlugin,
+              formaTheme,
+            ]}
             selectable={podeEditar}
             selectMirror
             select={(info) => {
               const inicio = separar(info.startStr);
               const fim = separar(info.endStr);
-              setDialogo({
-                data: inicio.data,
-                horaInicio: inicio.hora,
-                horaFim: fim.hora,
-              });
+              // No mês/ano a seleção é do dia inteiro: sugere um horário padrão.
+              setDialogo(
+                info.allDay
+                  ? { data: inicio.data, horaInicio: "08:00", horaFim: "12:00" }
+                  : {
+                      data: inicio.data,
+                      horaInicio: inicio.hora,
+                      horaFim: fim.hora,
+                    },
+              );
               calendario.current?.getApi().unselect();
             }}
             eventMouseEnter={(info) => {
@@ -261,12 +311,40 @@ export default function Calendario({
                 },
               },
             }}
-            initialView={modoPeriodo ? "periodo" : "timeGridWeek"}
+            initialView={modoPeriodo ? "periodo" : visao}
+            datesSet={(info) => {
+              const tipo = info.view.type;
+              if (
+                tipo === "timeGridWeek" ||
+                tipo === "dayGridMonth" ||
+                tipo === "multiMonthYear"
+              )
+                setVisao(tipo);
+            }}
             headerToolbar={
               modoPeriodo
                 ? false // o período já aparece nos filtros
-                : { start: "today prev,next", center: "title", end: "" }
+                : {
+                    start: "today prev,next",
+                    center: "title",
+                    end: "timeGridWeek,dayGridMonth,multiMonthYear",
+                  }
             }
+            buttons={{
+              today: { text: "Hoje" },
+              timeGridWeek: { text: "Semana" },
+              dayGridMonth: { text: "Mês" },
+              multiMonthYear: { text: "Ano" },
+            }}
+            // No mês/ano, clicar no número do dia abre a semana daquele dia.
+            navLinks
+            navLinkDayClick={(data) => {
+              const api = calendario.current?.getApi();
+              api?.changeView("timeGridWeek", data);
+            }}
+            dayMaxEventRows={3}
+            multiMonthMaxColumns={3}
+            displayEventEnd
             firstDay={1}
             hiddenDays={[0]}
             allDaySlot={false}
@@ -278,18 +356,30 @@ export default function Calendario({
             nowIndicator
             validRange={validRange}
             events={buscarEventos}
-            eventContent={(arg) => (
-              <div className="overflow-hidden p-0.5 text-xs leading-tight">
-                <div className="font-semibold">{arg.timeText}</div>
-                <div>{arg.event.title}</div>
-                <div>{String(arg.event.extendedProps.professor)}</div>
-                {arg.event.extendedProps.turma ? (
-                  <div className="opacity-80">
-                    Turma {String(arg.event.extendedProps.turma)}
-                  </div>
-                ) : null}
-              </div>
-            )}
+            eventContent={(arg) =>
+              arg.view.type !== "timeGridWeek" &&
+              arg.view.type !== "periodo" ? (
+                // Mês e ano: uma linha só (hora, UC e professor); a bolinha de cor já vem do calendário.
+                <div className="flex min-w-0 items-center gap-1 overflow-hidden px-0.5 text-xs">
+                  <span className="shrink-0 font-semibold">{arg.timeText}</span>
+                  <span className="truncate">
+                    {arg.event.title} ·{" "}
+                    {String(arg.event.extendedProps.professor)}
+                  </span>
+                </div>
+              ) : (
+                <div className="overflow-hidden p-0.5 text-xs leading-tight">
+                  <div className="font-semibold">{arg.timeText}</div>
+                  <div>{arg.event.title}</div>
+                  <div>{String(arg.event.extendedProps.professor)}</div>
+                  {arg.event.extendedProps.turma ? (
+                    <div className="opacity-80">
+                      Turma {String(arg.event.extendedProps.turma)}
+                    </div>
+                  ) : null}
+                </div>
+              )
+            }
           />
         </div>
       </div>
