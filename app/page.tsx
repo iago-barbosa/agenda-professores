@@ -19,7 +19,7 @@ async function Conteudo() {
           : "Clique em uma aula para ver os detalhes."
       }
     >
-      <Calendario catalogo={catalogo} podeEditar={podeEditar} />
+      <Calendario catalogo={catalogo} podeEditar={podeEditar} meuProfessorId={usuario.professorId} />
     </Pagina>
   );
 }
