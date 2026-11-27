@@ -1,4 +1,6 @@
-// Dados de exemplo para testar o calendário. Rode com: npx prisma db seed
+// Dados de exemplo para testar o calendário, SÓ em desenvolvimento.
+// Rode com: npm run db:exemplo
+// ATENÇÃO: apaga todos os dados do banco antes de criar os exemplos.
 import "dotenv/config";
 import { prisma } from "../lib/prisma";
 import { gerarOcorrencias, type DadosSerie } from "../lib/recorrencia";
@@ -13,7 +15,22 @@ function somarDias(data: string, dias: number) {
   return d.toISOString().slice(0, 10);
 }
 
+/** Impede rodar os exemplos no banco de produção ou num banco com dados reais. */
+async function conferirSePodeRodar() {
+  if (process.env.TURSO_DATABASE_URL || process.env.NODE_ENV === "production") {
+    throw new Error("Os dados de exemplo não podem ser criados no banco de produção.");
+  }
+  const reais = await prisma.usuario.count({ where: { NOT: { email: { endsWith: "@exemplo.com" } } } });
+  if (reais > 0 && !process.argv.includes("--forcar")) {
+    throw new Error(
+      `O banco tem ${reais} usuário(s) que não são de exemplo e tudo seria apagado. ` +
+        "Se for isso mesmo, rode: npm run db:exemplo -- --forcar",
+    );
+  }
+}
+
 async function main() {
+  await conferirSePodeRodar();
   await prisma.usuario.deleteMany();
   await prisma.alocacao.deleteMany();
   await prisma.serieAlocacao.deleteMany();
@@ -102,7 +119,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error(e instanceof Error ? e.message : e);
     process.exit(1);
   })
   .finally(() => prisma.$disconnect());
