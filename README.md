@@ -1,5 +1,6 @@
 # Agenda de Professores
 
+
 Calendário de alocação dos professores, no estilo de visualização do Outlook.
 
 Stack: Next.js 16, React 19, TypeScript, Tailwind 4, FullCalendar 7 e Prisma 7 com SQLite (arquivo local em desenvolvimento, Turso em produção).
