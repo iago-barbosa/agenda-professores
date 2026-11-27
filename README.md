@@ -49,11 +49,13 @@ npm run usuario:criar -- --nome "Ana" --email ana@escola.com --senha "senhaForte
 | `app/api/alocacoes/route.ts` | `GET /api/alocacoes?inicio=&fim=&professores=1,2` |
 | `app/ui/calendario.tsx` | Calendário semanal com filtros por professor e período |
 | `app/login/` | Tela de login e ações de entrar e sair |
+| `app/senha/` | Tela para o usuário logado trocar a própria senha |
 | `app/professores/` | Cadastro de professores (só Admin) |
 | `app/cursos/` | Cadastro de cursos, com UCs e turmas (só Admin) |
 | `app/alocacoes/actions.ts` | Criar, editar e excluir alocações e alocação em lote |
 | `app/alocacoes/lote/` | Tela de alocação em lote por UC (só Admin) |
 | `app/ui/dialogo-alocacao.tsx` | Janela de criar, editar, excluir ou ver detalhes de uma aula |
+| `lib/carga.ts`, `lib/carga-servidor.ts` | Carga horária: soma as horas alocadas por UC + turma e avisa quando passa da carga |
 | `lib/conflitos.ts` | Procura conflitos de horário do professor ou da turma |
 | `lib/auth.ts` | Usuário logado e checagem de perfil (`exigirUsuario`, `exigirAdmin`) |
 | `lib/sessao.ts` | Cookie de sessão criptografado (iron-session) |

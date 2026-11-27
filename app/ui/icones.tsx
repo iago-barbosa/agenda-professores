@@ -39,3 +39,9 @@ export const IconeSair = ({ className = "h-4 w-4" }: P) => (
     <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10" />
   </svg>
 );
+export const IconeChave = ({ className = "h-5 w-5" }: P) => (
+  <svg {...base} className={className}>
+    <circle cx="8" cy="15" r="4" />
+    <path d="m11 12 8-8M16 7l2.5 2.5M14 9l2 2" />
+  </svg>
+);

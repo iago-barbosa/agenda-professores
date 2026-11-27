@@ -69,7 +69,7 @@ export default function FormularioAcao({
       {estado.conflitos && estado.conflitos.length > 0 && (
         <div role="alert" className="alerta-aviso">
           <p className="mb-1 font-semibold">
-            {estado.conflitos.length} conflito(s) de horário encontrado(s):
+            {estado.conflitos.length} aviso(s) antes de salvar:
           </p>
           <ul className="mb-2 max-h-40 list-disc overflow-y-auto pl-5">
             {estado.conflitos.map((c, i) => (

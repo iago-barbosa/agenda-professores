@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import type { Catalogo } from "@/lib/catalogo";
+import { chaveUcTurma, formatarHoras } from "@/lib/carga";
 
 const NOME_MODALIDADE = {
   TECNICO: "Técnico",
@@ -20,8 +21,11 @@ const igual = (a: string, b: string) =>
 export default function CamposVinculo({
   catalogo,
   inicial,
+  mostrarCarga = true,
 }: {
   catalogo: Catalogo;
+  /** Mostra a linha de carga horária da UC (a alocação em lote tem um resumo próprio). */
+  mostrarCarga?: boolean;
   inicial?: {
     professorId?: number;
     curso?: string;
@@ -40,6 +44,11 @@ export default function CamposVinculo({
   const turmaExistente = cursoExistente?.turmas.find((t) =>
     igual(t.codigo, turma),
   );
+  const carga = ucExistente?.cargaHoraria ?? null;
+  const alocadas =
+    ucExistente && turmaExistente
+      ? (catalogo.horasAlocadas[chaveUcTurma(ucExistente.id, turmaExistente.id)] ?? 0)
+      : 0;
   const novo = (texto: string, existe: unknown) =>
     limpar(texto) !== "" && !existe;
 
@@ -160,9 +169,36 @@ export default function CamposVinculo({
         )}
       </label>
 
+      {mostrarCarga && ucExistente && limpar(turma) !== "" && (
+        <p
+          className={`text-sm sm:col-span-2 ${
+            carga && alocadas > carga ? "text-red-700" : "text-gray-600"
+          }`}
+        >
+          {carga ? (
+            <>
+              Carga horária da UC: <strong>{formatarHoras(carga)}</strong> · já
+              alocadas para esta turma: <strong>{formatarHoras(alocadas)}</strong> ·{" "}
+              {alocadas > carga ? (
+                <strong>{formatarHoras(alocadas - carga)} além da carga</strong>
+              ) : (
+                <>
+                  faltam <strong>{formatarHoras(carga - alocadas)}</strong>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              Esta UC está sem carga horária. Cadastre-a em Cursos, UCs e turmas
+              para o sistema controlar as horas.
+            </>
+          )}
+        </p>
+      )}
+
       {novo(uc, ucExistente) && (
         <label className="rotulo">
-          Carga horária da UC (opcional)
+          Carga horária da UC (recomendado)
           <input
             name="cargaHoraria"
             type="number"
