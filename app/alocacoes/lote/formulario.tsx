@@ -4,6 +4,7 @@ import type { Catalogo } from "@/lib/catalogo";
 import FormularioAcao from "@/app/ui/formulario-acao";
 import CamposVinculo from "@/app/ui/campos-vinculo";
 import { criarLote } from "../actions";
+import ResumoCarga from "./resumo-carga";
 
 const DIAS = [
   { valor: 1, nome: "Seg" },
@@ -40,7 +41,7 @@ export default function FormularioLote({ catalogo }: { catalogo: Catalogo }) {
       className="flex flex-col gap-5"
     >
       <Secao titulo="O quê e quem">
-        <CamposVinculo catalogo={catalogo} />
+        <CamposVinculo catalogo={catalogo} mostrarCarga={false} />
       </Secao>
 
       <Secao titulo="Quando">
@@ -96,6 +97,7 @@ export default function FormularioLote({ catalogo }: { catalogo: Catalogo }) {
             />
           </label>
         </div>
+        <ResumoCarga catalogo={catalogo} />
       </Secao>
     </FormularioAcao>
   );

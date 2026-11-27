@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { exigirAdmin } from "@/lib/auth";
 import { buscarConflitos } from "@/lib/conflitos";
+import { avisoCargaHoraria } from "@/lib/carga-servidor";
 import { dataHoraLocal, gerarOcorrencias, validarSerie } from "@/lib/recorrencia";
 import { executar, inteiro, texto, ErroFormulario, type EstadoAcao } from "@/lib/formulario";
 import { resolverVinculos } from "@/lib/vinculos";
@@ -17,6 +18,16 @@ async function comIds(formData: FormData) {
 }
 
 const querConfirmar = (formData: FormData) => formData.get("confirmarConflitos") === null;
+
+/** Dados da UC/turma para conferir a carga horária (antes de cadastrar o que for novo). */
+function vinculoCarga(formData: FormData, previa: { ucId: number | null; turmaId: number | null }) {
+  return {
+    ucId: previa.ucId,
+    turmaId: previa.turmaId,
+    nomeUC: texto(formData, "uc", "UC"),
+    cargaNovaUC: inteiro(formData, "cargaHoraria", "Carga horária", false),
+  };
+}
 
 /** Cria uma alocação avulsa ou edita uma existente (só aquela data, mesmo se fizer parte de um lote). */
 export async function salvarAlocacao(_: EstadoAcao, formData: FormData) {
@@ -33,6 +44,8 @@ export async function salvarAlocacao(_: EstadoAcao, formData: FormData) {
     const ocorrencia = { inicio: dataHoraLocal(data, horaInicio), fim: dataHoraLocal(data, horaFim) };
     if (querConfirmar(formData)) {
       const conflitos = await buscarConflitos([ocorrencia], previa.professorId, previa.turmaId, id ? [id] : []);
+      const carga = await avisoCargaHoraria([ocorrencia], vinculoCarga(formData, previa), id ? [id] : []);
+      if (carga) conflitos.push(carga);
       if (conflitos.length) return { conflitos };
     }
     const vinculos = await comIds(formData);
@@ -85,6 +98,8 @@ export async function criarLote(_: EstadoAcao, formData: FormData) {
 
     if (querConfirmar(formData)) {
       const conflitos = await buscarConflitos(ocorrencias, previa.professorId, previa.turmaId);
+      const carga = await avisoCargaHoraria(ocorrencias, vinculoCarga(formData, previa));
+      if (carga) conflitos.push(carga);
       if (conflitos.length) return { conflitos };
     }
     const vinculos = await comIds(formData);

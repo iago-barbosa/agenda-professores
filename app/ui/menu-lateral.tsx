@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { sair } from "@/app/login/actions";
 import {
   IconeCalendario,
+  IconeChave,
   IconeCursos,
   IconeLote,
   IconeProfessores,
@@ -31,6 +32,7 @@ const ITENS = [
     Icone: IconeCursos,
     admin: true,
   },
+  { href: "/senha", texto: "Alterar senha", Icone: IconeChave, admin: false },
 ];
 
 export default function MenuLateral({

@@ -8,6 +8,8 @@ import FormularioAcao from "@/app/ui/formulario-acao";
 import BotaoExcluir from "@/app/ui/botao-excluir";
 import { campo, rotulo } from "@/app/ui/estilos";
 import CamposCurso from "../campos-curso";
+import { horasPorUcTurma } from "@/lib/carga-servidor";
+import { chaveUcTurma, formatarHoras } from "@/lib/carga";
 import {
   criarTurma,
   criarUC,
@@ -32,6 +34,7 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
       })
     : null;
   if (!curso) notFound();
+  const horas = await horasPorUcTurma({ ucId: { in: curso.ucs.map((u) => u.id) } });
   const podeNovaUC =
     curso.modalidade !== "APERFEICOAMENTO" || curso.ucs.length === 0;
 
@@ -92,6 +95,28 @@ async function Conteudo({ params }: { params: Promise<{ id: string }> }) {
                 acao={excluirUC.bind(null, uc.id)}
                 confirmacao={`Excluir a UC ${uc.nome}?`}
               />
+              {curso.turmas.length > 0 && (
+                <div className="flex w-full flex-wrap items-center gap-2 text-xs">
+                  <span className="text-gray-500">Horas alocadas por turma:</span>
+                  {curso.turmas.map((t) => {
+                    const h = horas[chaveUcTurma(uc.id, t.id)] ?? 0;
+                    const carga = uc.cargaHoraria;
+                    const cor = !carga
+                      ? "bg-gray-100 text-gray-600"
+                      : h > carga + 1 / 60
+                        ? "bg-red-50 text-red-700"
+                        : h >= carga - 1 / 60
+                          ? "bg-green-50 text-green-700"
+                          : "bg-amber-50 text-amber-800";
+                    return (
+                      <span key={t.id} className={`selo ${cor}`}>
+                        {t.codigo}: {formatarHoras(h)}
+                        {carga ? ` / ${formatarHoras(carga)}` : ""}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </li>
           ))}
           {curso.ucs.length === 0 && (

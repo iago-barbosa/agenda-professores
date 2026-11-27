@@ -15,6 +15,8 @@ const redesInternas = ["10.*.*.*", "172.*.*.*", "192.168.*.*"];
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: [...ipsDestaMaquina, ...redesInternas],
+  // Esconde o botão "N" do Next no canto da tela em desenvolvimento (os erros continuam aparecendo).
+  devIndicators: false,
   /* config options here */
   experimental: {
     agentFeedback: true,
